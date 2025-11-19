@@ -1,12 +1,9 @@
-from django.shortcuts import render
-from django.views.decorators.csrf import csrf_exempt
-from django.contrib.auth import login as auth_login, authenticate
-from django.http import HttpResponseRedirect, JsonResponse
-from django.contrib.auth.models import User
 import json
-from django.contrib.auth import logout as auth_logout
-from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth import authenticate, login as auth_login
 from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.models import User
+from django.contrib.auth import logout as auth_logout
 
 @csrf_exempt
 def logout(request):
@@ -14,6 +11,7 @@ def logout(request):
     try:
         auth_logout(request)
         return JsonResponse({
+            "id": request.user.pk, 
             "username": username,
             "status": True,
             "message": "Logged out successfully!"
@@ -24,34 +22,6 @@ def logout(request):
             "message": "Logout failed."
         }, status=401)
 
-# Create your views here.
-@csrf_exempt
-def login(request):
-    username = request.POST['username']
-    password = request.POST['password']
-    user = authenticate(username=username, password=password)
-    if user is not None:
-        if user.is_active:
-            auth_login(request, user)
-            # Login status successful.
-            return JsonResponse({
-                "username": user.username,
-                "status": True,
-                "message": "Login successful!"
-                # Add other data if you want to send data to Flutter.
-            }, status=200)
-        else:
-            return JsonResponse({
-                "status": False,
-                "message": "Login failed, account is disabled."
-            }, status=401)
-
-    else:
-        return JsonResponse({
-            "status": False,
-            "message": "Login failed, please check your username or password."
-        }, status=401)
-        
 @csrf_exempt
 def register(request):
     if request.method == 'POST':
@@ -89,3 +59,31 @@ def register(request):
             "status": False,
             "message": "Invalid request method."
         }, status=400)
+
+@csrf_exempt
+def login(request):
+    username = request.POST['username']
+    password = request.POST['password']
+    user = authenticate(username=username, password=password)
+    if user is not None:
+        if user.is_active:
+            auth_login(request, user)
+            # Login status successful.
+            return JsonResponse({
+                "id": user.pk,
+                "username": user.username,
+                "status": True,
+                "message": "Login successful!"
+                # Add other data if you want to send data to Flutter.
+            }, status=200)
+        else:
+            return JsonResponse({
+                "status": False,
+                "message": "Login failed, account is disabled."
+            }, status=401)
+
+    else:
+        return JsonResponse({
+            "status": False,
+            "message": "Login failed, please check your username or password."
+        }, status=401)
